@@ -1,55 +1,56 @@
 public class Philosopher implements Runnable {
 
 
-    private boolean leftFork = false;
-    private boolean rightFork = false;
+    private Object leftFork;
+    private Object rightFork;
 
-    public Philosopher(boolean leftFork, boolean rightFork) {
+    public Philosopher(Object leftFork, Object rightFork) {
         this.leftFork = leftFork;
         this.rightFork = rightFork;
     }
 
     public void think() {
         try {
-            System.out.println(Thread.currentThread().getName() + " thinks");
-            Thread.sleep((int) (Math.random() * 1000));
+            System.out.println(Thread.currentThread().getName() + " is thinking");
+            Thread.sleep((int) (Math.random() * 100));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
     }
-
-
-    public synchronized void eat() throws InterruptedException {
-        if (!leftFork) {
-            if (!rightFork) {
-                leftFork = true;
+    public void takeLeftFork() throws InterruptedException {
                 System.out.println(Thread.currentThread().getName() + " picked up left fork");
-                rightFork = true;
-                System.out.println( Thread.currentThread().getName() + " picked up right fork");
-                System.out.println(Thread.currentThread().getName() + " eats");
-                Thread.sleep((int) (Math.random() * 1000));
-                System.out.println(Thread.currentThread().getName() + " put left fork");
-                System.out.println(Thread.currentThread().getName() + " put right fork");
-                leftFork = false;
-                rightFork = false;
-                notifyAll();
-            } else {
-                leftFork = false;
-                wait((int) (Math.random() * 1000));
+                Thread.sleep(((int) (Math.random() * 100)));
             }
-        }
+    public void takeRightFork() throws InterruptedException {
+        System.out.println(Thread.currentThread().getName() + " picked up right fork");
+        System.out.println(Thread.currentThread().getName() + " is eating");
+        Thread.sleep(((int) (Math.random() * 100)));
+    }
+    public void putLeftFork() throws InterruptedException {
+        System.out.println(Thread.currentThread().getName() + " put left fork");
+        Thread.sleep(((int) (Math.random() * 100)));
+    }
+    public void putRightFork() throws InterruptedException {
+        System.out.println(Thread.currentThread().getName() + " put right fork");
+        Thread.sleep(((int) (Math.random() * 100)));
     }
 
     @Override
     public void run() {
-        while (true) {
-            think();
-            try {
-                eat();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
+        try {
+            while (true) {
+                think();
+                synchronized (leftFork) {
+                    takeLeftFork();
+                    synchronized (rightFork) {
+                        takeRightFork();
+                        putRightFork();
+                    }
+                    putLeftFork();
+                }
             }
-            think();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 }
